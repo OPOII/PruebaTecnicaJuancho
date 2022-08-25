@@ -185,20 +185,14 @@ public class UserServiceImpl implements UserService, UserDetailsService {
                         .header("X-RapidAPI-Host", "bravenewcoin.p.rapidapi.com")
                         .method("GET", HttpRequest.BodyPublishers.noBody())
                         .build();
-                System.out.println(request2.headers());
-                System.out.println("-----------------------------------");
                 HttpResponse<String> response2 = HttpClient.newHttpClient().send(request2, HttpResponse.BodyHandlers.ofString());
-                System.out.println(response2.body());
-                System.out.println("-----------------------------------");
+
                 JsonObject data2=new Gson().fromJson(response2.body(),JsonObject.class);
-                System.out.println(data2);
-                System.out.println("-----------------------------------");
+
                 JsonArray content2=data2.get("content").getAsJsonArray();
-                System.out.println(content2);
-                System.out.println("-----------------------------------");
+
                 JsonObject object2=content2.get(0).getAsJsonObject();
-                System.out.println(object2);
-                System.out.println("-----------------------------------");
+
                 int quantity=cryptoRepository.findAll().size();
 
                 String coinName=object.get("name").getAsString();
