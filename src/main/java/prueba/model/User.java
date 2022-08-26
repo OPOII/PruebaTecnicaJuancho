@@ -13,6 +13,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.ArrayList;
@@ -54,9 +55,9 @@ public class User {
     @NotBlank(message = "currency is mandatory is mandatory")
     @Column
     private String userCurrency;
-    @NotNull
+    @NotNull(message="currency value cant be null")
     @Column
-    @JsonIgnore
+    @NotEmpty(message = "currency value cant be empty")
     private double TRMToLocalCurrency;
     @Column
     @JsonIgnore
@@ -69,11 +70,13 @@ public class User {
     private String apiToken;
     @OneToOne
     @JsonIgnore
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
     private CryptoCoin favoriteCryptoCoin;
 
     @OneToMany()
     @LazyCollection(LazyCollectionOption.FALSE)
     @JsonIgnore
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
     private List<CryptoCoin>currentCoins;
 
 

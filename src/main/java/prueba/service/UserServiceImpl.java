@@ -20,13 +20,9 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.text.MessageFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
+
 @Service
 @Transactional
 public class UserServiceImpl implements UserService, UserDetailsService {
@@ -37,7 +33,6 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     private CryptoRepository cryptoRepository;
     @Autowired
     private  PasswordEncoder encoder;
-
 
     @Override
 
@@ -71,6 +66,11 @@ public class UserServiceImpl implements UserService, UserDetailsService {
             }
             try {
                 CryptoCoin searchCoin=this.searchSymbolCoin(symbol,userSession.getApiToken());
+                //Price in dollar
+                if(!userSession.getUserCurrency().equalsIgnoreCase("USD")){
+                    double userTRM=userSession.getTRMToLocalCurrency();
+                   this.updateCoinCurrency(searchCoin,userTRM);
+                }
                 if(userSession.getFavoriteCryptoCoin()==null){
                     userSession.setFavoriteCryptoCoin(searchCoin);
                     userSession.getCurrentCoins().add(searchCoin);
@@ -87,14 +87,31 @@ public class UserServiceImpl implements UserService, UserDetailsService {
             return null;
         }
     }
+    public void updateCoinCurrency(CryptoCoin coin,double userCurrency){
+        double currency=coin.getPrecio()*userCurrency;
+        coin.setPrecio(currency);
+        cryptoRepository.saveAndFlush(coin);
+    }
+
 
     @Override
-    public List<CryptoCoin> getAllCryptos(String username) {
+    public List<CryptoCoin> getAllCryptos(String username, int orderCriteria)throws Exception {
         User user=this.searchByUsername(username);
         if(user!=null){
+            List<CryptoCoin>list=user.getCurrentCoins();
+            if(list.size()>2){
+                if(orderCriteria==0){
+                   List<CryptoCoin> sorted=(ArrayList<CryptoCoin>)list.stream().sorted(Comparator.comparing(CryptoCoin::getPrecio)).collect(Collectors.toList());
+                   return sorted;
+                }else if(orderCriteria==1){
+                    List<CryptoCoin> sorteds=(ArrayList<CryptoCoin>)list.stream().sorted(Comparator.comparing(CryptoCoin::getPrecio)).collect(Collectors.toList());
+                    Collections.reverse(sorteds);
+                    return sorteds;
+                }
+            }
             return user.getCurrentCoins();
         }else{
-            return null;
+            throw new UsernameNotFoundException("El usuario que intentaba buscar no se encuentra");
         }
     }
     public User searchByUsername(String username){
@@ -116,7 +133,6 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
     @Override
     public User getUserByUsername(String username)throws Exception {
-
         User search=userRepository.findByUsername(username);
         if(search!=null){
             return search;
@@ -193,14 +209,12 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
                 JsonObject object2=content2.get(0).getAsJsonObject();
 
-                int quantity=cryptoRepository.findAll().size();
 
                 String coinName=object.get("name").getAsString();
                 String symbols=object.get("symbol").getAsString();
                 double precio=object2.get("price").getAsDouble();
                 int marketCapRank=object2.get("marketCapRank").getAsInt();
                 searched=new CryptoCoin();
-                searched.setId(Long.valueOf(quantity));
                 searched.setNombre(coinName);
                 searched.setSymbol(symbols);
                 searched.setPrecio(precio);

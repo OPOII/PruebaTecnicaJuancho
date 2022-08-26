@@ -1,6 +1,5 @@
 package prueba.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -18,9 +17,10 @@ import javax.validation.constraints.NotNull;
 public class CryptoCoin {
     private static final long serialVersionUID = 1L;
     @Id
-    @SequenceGenerator(name="CLIENT_ID_GENERATOR", sequenceName="CLIENT_SEQ")
-    @GeneratedValue(strategy = GenerationType.AUTO, generator = "CLIENT_ID_GENERATOR")
+    @SequenceGenerator(name="CRYPTOCOIN_ID_GENERATOR", sequenceName="CRYPTOCOIN_SEQ")
+    @GeneratedValue(strategy = GenerationType.AUTO, generator = "CRYPTOCOIN_ID_GENERATOR")
     @Column
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
     private Long id;
     @NotNull
     @NotBlank(message = "nombre is mandatory")

@@ -11,7 +11,7 @@ public interface UserService {
 
      User save(User user) throws Exception;
      CryptoCoin addCryptoCoin(String symbol,String username) throws Exception;
-     List<CryptoCoin> getAllCryptos(String username);
+     List<CryptoCoin> getAllCryptos(String username,int orderCriteria) throws Exception;
      CryptoCoin setFavoriteCrypto(String name,String username);
 
      User getUserByUsername(String username)throws Exception;

@@ -1,14 +1,12 @@
 package prueba.controller;
 
+import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.CurrentSecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import prueba.customHandler.ResponseHandler;
@@ -18,7 +16,6 @@ import prueba.model.User;
 import prueba.service.UserServiceImpl;
 import prueba.utility.JWTUtility;
 
-import javax.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/user")
@@ -44,7 +41,7 @@ public class UserController {
                     )
             );
         }catch(BadCredentialsException e){
-            return ResponseHandler.generateResponse("The login was succesfull", HttpStatus.OK,null);
+            return ResponseHandler.generateResponse(e.getMessage(), HttpStatus.BAD_REQUEST,null);
         }
         final UserDetails userDetails=service.loadUserByUsername(request.getUsername());
         final String token=jwtUtility.generateToken(userDetails);
@@ -59,33 +56,58 @@ public class UserController {
     }
     @PostMapping("/register")
     public ResponseEntity<Object> registerUser(@RequestBody User usuario) throws Exception {
-        return ResponseHandler.generateResponse("The user was saved succesfull", HttpStatus.OK,service.save(usuario));
+        try{
+            return ResponseHandler.generateResponse("The user was saved succesfull", HttpStatus.OK,service.save(usuario));
+        }catch(Exception e){
+            return ResponseHandler.generateResponse(e.getMessage(), HttpStatus.BAD_REQUEST,null);
+        }
     }
 
     @PostMapping("/addCoin")
     public ResponseEntity<Object> addCoin(@RequestParam String coinSymbol) throws Exception {
-       // String authorization = httpServletRequest.getHeader("Authorization");
-        String token = null;
-        String userName = null;
-        token = this.token;
-        userName = jwtUtility.getUsernameFromToken(token);
-        System.out.println("----------------------- COIN---------------");
-        System.out.println(userName);
-        return ResponseHandler.generateResponse("The coin was saved succesfull", HttpStatus.OK,service.addCryptoCoin(coinSymbol,userName));
+        try{
+            String userName = jwtUtility.getUsernameFromToken(this.token);
+            return ResponseHandler.generateResponse("The coin was saved succesfull", HttpStatus.OK,service.addCryptoCoin(coinSymbol,userName));
+        }catch(Exception e){
+            return ResponseHandler.generateResponse(e.getMessage(), HttpStatus.BAD_REQUEST,null);
+
+        }
     }
     @PutMapping("/setFavoriteCoin")
-    public ResponseEntity<Object> setFavoriteCoin(@CurrentSecurityContext(expression="authentication?.name")String username,@RequestParam String coinSymbol) throws Exception {
-        return ResponseHandler.generateResponse("The coin was saved succesfull", HttpStatus.OK,service.addCryptoCoin(coinSymbol,username));
+    public ResponseEntity<Object> setFavoriteCoin(@RequestParam String coinSymbol) throws Exception {
+        try {
+            String username=jwtUtility.getUsernameFromToken(this.token);
+            return ResponseHandler.generateResponse("The coin was saved succesfull", HttpStatus.OK,service.addCryptoCoin(coinSymbol,username));
+        }catch(Exception e){
+            return ResponseHandler.generateResponse(e.getMessage(), HttpStatus.BAD_REQUEST,null);
+        }
+
     }
 
     @GetMapping("/getByUsername")
     public ResponseEntity<Object> getByUsername(@RequestParam String username)throws Exception {
-        User searched=service.getUserByUsername(username);
-        if(searched!=null){
+        try {
+            User searched=service.getUserByUsername(username);
             return ResponseHandler.generateResponse("The user was founded",HttpStatus.OK,searched);
-        }else{
-            return ResponseHandler.generateResponse("The user doesnt exist",HttpStatus.NOT_FOUND,null);
-
+        }catch(Exception e) {
+            return ResponseHandler.generateResponse(e.getMessage(), HttpStatus.NOT_FOUND, null);
         }
+    }
+    @GetMapping("/listCoins")
+    public ResponseEntity<Object>getCoinList(@Parameter(required = false,description="type 0 for ascending, 1 for descending, empty field for descending ") Integer orderCriteria)throws Exception{
+        if(token!=null && token!=""){
+            String username=jwtUtility.getUsernameFromToken(token);
+            try{
+                if(orderCriteria==null){
+                    orderCriteria=1;
+                }
+                return ResponseHandler.generateResponse("The list was successfull",HttpStatus.OK,service.getAllCryptos(username,orderCriteria));
+            }catch(Exception e){
+                return ResponseHandler.generateResponse(e.getMessage(),HttpStatus.BAD_REQUEST,null);
+            }
+        }else{
+            return ResponseHandler.generateResponse("The user isn't authenticated",HttpStatus.FORBIDDEN,null);
+        }
+
     }
 }
