@@ -77,7 +77,7 @@ public class UserController {
     public ResponseEntity<Object> setFavoriteCoin(@RequestParam String coinSymbol) throws Exception {
         try {
             String username=jwtUtility.getUsernameFromToken(this.token);
-            return ResponseHandler.generateResponse("The coin was saved succesfull", HttpStatus.OK,service.addCryptoCoin(coinSymbol,username));
+            return ResponseHandler.generateResponse("The coin was saved succesfull", HttpStatus.OK,service.setFavoriteCrypto(coinSymbol,username));
         }catch(Exception e){
             return ResponseHandler.generateResponse(e.getMessage(), HttpStatus.BAD_REQUEST,null);
         }
@@ -92,9 +92,17 @@ public class UserController {
         }catch(Exception e) {
             return ResponseHandler.generateResponse(e.getMessage(), HttpStatus.NOT_FOUND, null);
         }
+    }@GetMapping("/getFavoriteCryptoCoin")
+    public ResponseEntity<Object> getFavoriteCryptoCoin()throws Exception {
+        try {
+            String userName = jwtUtility.getUsernameFromToken(this.token);
+            return ResponseHandler.generateResponse("The user was founded",HttpStatus.OK,service.getFavoriteCryptoCoin(userName));
+        }catch(Exception e) {
+            return ResponseHandler.generateResponse(e.getMessage(), HttpStatus.NOT_FOUND, null);
+        }
     }
     @GetMapping("/listCoins")
-    public ResponseEntity<Object>getCoinList(@Parameter(required = false,description="type 0 for ascending, 1 for descending, empty field for descending ") Integer orderCriteria)throws Exception{
+    public ResponseEntity<Object>getCoinList(@Parameter(description="type 0 for ascending, 1 for descending, empty field for descending ") Integer orderCriteria)throws Exception{
         if(token!=null && token!=""){
             String username=jwtUtility.getUsernameFromToken(token);
             try{

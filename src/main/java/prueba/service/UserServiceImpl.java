@@ -64,25 +64,29 @@ public class UserServiceImpl implements UserService, UserDetailsService {
                 String getToken=this.getAccessToken();
                 userSession.setApiToken(getToken);
             }
-            try {
-                CryptoCoin searchCoin=this.searchSymbolCoin(symbol,userSession.getApiToken());
-                //Price in dollar
-                if(!userSession.getUserCurrency().equalsIgnoreCase("USD")){
-                    double userTRM=userSession.getTRMToLocalCurrency();
-                   this.updateCoinCurrency(searchCoin,userTRM);
-                }
-                if(userSession.getFavoriteCryptoCoin()==null){
-                    userSession.setFavoriteCryptoCoin(searchCoin);
+            symbol=symbol.toUpperCase();
+            CryptoCoin validateCoin=cryptoRepository.findBySymbol(symbol);
+            if(validateCoin!=null){
+                throw new Exception("Actualmente ya posees la criptomoneda, no puedes volverla a agregar");
+            }else{
+                try {
+                    CryptoCoin searchCoin=this.searchSymbolCoin(symbol,userSession.getApiToken());
+                    //Price in dollar
+                    if(!userSession.getUserCurrency().equalsIgnoreCase("USD")){
+                        double userTRM=userSession.getTRMToLocalCurrency();
+                        this.updateCoinCurrency(searchCoin,userTRM);
+                    }
+                    if(userSession.getFavoriteCryptoCoin()==null){
+                        userSession.setFavoriteCryptoCoin(searchCoin);
+                    }
                     userSession.getCurrentCoins().add(searchCoin);
                     userRepository.saveAndFlush(userSession);
-                }else{
-                    userSession.getCurrentCoins().add(searchCoin);
-                    userRepository.saveAndFlush(userSession);
+                    return searchCoin;
+                }catch(Exception e){
+                    throw new Exception(e);
                 }
-                return searchCoin;
-            }catch(Exception e){
-                throw new Exception(e);
             }
+
         }else{
             return null;
         }
@@ -95,21 +99,37 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
 
     @Override
-    public List<CryptoCoin> getAllCryptos(String username, int orderCriteria)throws Exception {
+    public HashMap<String,List<CryptoCoin>> getAllCryptos(String username, int orderCriteria)throws Exception {
         User user=this.searchByUsername(username);
+        HashMap<String, List<CryptoCoin>> results=new HashMap<String, List<CryptoCoin>>();
+        List<CryptoCoin>favorite=new ArrayList<CryptoCoin>();
         if(user!=null){
+            favorite.add(user.getFavoriteCryptoCoin());
             List<CryptoCoin>list=user.getCurrentCoins();
             if(list.size()>2){
                 if(orderCriteria==0){
                    List<CryptoCoin> sorted=(ArrayList<CryptoCoin>)list.stream().sorted(Comparator.comparing(CryptoCoin::getPrecio)).collect(Collectors.toList());
-                   return sorted;
+                   List<CryptoCoin> top3= sorted.subList(0,3);
+
+                   results.put("Top 3 CryptoCoins",top3);
+                   results.put("All CryptoCoins",sorted);
+                    results.put("Favorite CryptoCoin",favorite);
+                   return results;
                 }else if(orderCriteria==1){
                     List<CryptoCoin> sorteds=(ArrayList<CryptoCoin>)list.stream().sorted(Comparator.comparing(CryptoCoin::getPrecio)).collect(Collectors.toList());
                     Collections.reverse(sorteds);
-                    return sorteds;
+                    List<CryptoCoin> top3= sorteds.subList(0,3);
+                    results.put("Top 3 CryptoCoins",top3);
+                    results.put("All CryptoCoins",sorteds);
+                    results.put("Favorite CryptoCoin",favorite);
+                    return results;
                 }
             }
-            return user.getCurrentCoins();
+                results.put("All CryptoCoins",user.getCurrentCoins());
+                results.put("Favorite CryptoCoin",favorite);
+                return results;
+
+
         }else{
             throw new UsernameNotFoundException("El usuario que intentaba buscar no se encuentra");
         }
@@ -119,7 +139,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     }
 
     @Override
-    public CryptoCoin setFavoriteCrypto(String name,String username) {
+    public CryptoCoin setFavoriteCrypto(String name,String username)throws Exception {
         CryptoCoin search=cryptoRepository.findBySymbol(name);
         if(search!=null){
            User user= userRepository.findByUsername(username);
@@ -127,7 +147,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
            userRepository.saveAndFlush(user);
            return search;
         }else{
-            return null;
+            throw new Exception("No se pudo cambiar la criptomoneda favorita porque no existe la moneda que ingresaste");
         }
     }
 
@@ -140,6 +160,22 @@ public class UserServiceImpl implements UserService, UserDetailsService {
             return null;
         }
 
+    }
+
+    @Override
+    public CryptoCoin getFavoriteCryptoCoin(String username) throws Exception {
+        User user=userRepository.findByUsername(username);
+        if(user==null){
+            throw new Exception("Something went wrong with your user");
+        }else{
+            CryptoCoin favorite=user.getFavoriteCryptoCoin();
+            if(favorite!=null){
+                return favorite;
+            }else{
+                throw new Exception("There is not a favorite crypto coin currently");
+            }
+
+        }
     }
 
     @Override
@@ -174,10 +210,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         return token;
     }
     public CryptoCoin searchSymbolCoin(String symbol,String accessToken) throws Exception {
-        CryptoCoin searched=cryptoRepository.findBySymbol(symbol);
-        if(searched!=null){
-            return searched;
-        }else{
+
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create("https://bravenewcoin.p.rapidapi.com/asset?symbol="+symbol+"&status=ACTIVE"))
                     .header("X-RapidAPI-Key", "79192b3294msh7a6f314e68f9525p12e899jsn6fae355fe8bb")
@@ -214,7 +247,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
                 String symbols=object.get("symbol").getAsString();
                 double precio=object2.get("price").getAsDouble();
                 int marketCapRank=object2.get("marketCapRank").getAsInt();
-                searched=new CryptoCoin();
+                CryptoCoin searched=new CryptoCoin();
                 searched.setNombre(coinName);
                 searched.setSymbol(symbols);
                 searched.setPrecio(precio);
@@ -224,7 +257,8 @@ public class UserServiceImpl implements UserService, UserDetailsService {
             }else{
                 throw new Exception("El simbolo de la criptomoneda que busca no existe");
             }
-        }
+
     }
+
 
 }

@@ -71,7 +71,7 @@ public class User {
     @OneToOne
     @JsonIgnore
     @Schema(accessMode = Schema.AccessMode.READ_ONLY)
-    private CryptoCoin favoriteCryptoCoin;
+    private CryptoCoin favoriteCryptoCoin=null;
 
     @OneToMany()
     @LazyCollection(LazyCollectionOption.FALSE)
