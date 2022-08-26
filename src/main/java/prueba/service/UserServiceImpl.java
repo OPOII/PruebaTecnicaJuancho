@@ -179,6 +179,11 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     }
 
     @Override
+    public boolean existById(Long id) throws Exception {
+        return userRepository.existsById(id);
+    }
+
+    @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         if(username!=null && username!=""){
             User founded=userRepository.findByUsername(username);

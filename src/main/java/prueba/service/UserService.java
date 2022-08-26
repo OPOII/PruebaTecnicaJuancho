@@ -17,4 +17,5 @@ public interface UserService {
 
      User getUserByUsername(String username)throws Exception;
      CryptoCoin getFavoriteCryptoCoin(String username)throws Exception;
+     boolean existById(Long id)throws Exception;
 }

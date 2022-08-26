@@ -52,7 +52,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        http.csrf().disable();
+        /*http.csrf().disable();
         http.authorizeRequests().antMatchers(SWAGGER_WHITELIST).permitAll();
 
         /*http.authorizeRequests()
@@ -63,7 +63,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
          */
 
 
-       /* http.csrf()
+        http.csrf()
                 .disable()
                 .authorizeRequests()
                 .antMatchers(SWAGGER_WHITELIST)
@@ -74,7 +74,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
-*/
+
 
     }
 }
