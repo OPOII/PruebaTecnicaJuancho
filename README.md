@@ -11,7 +11,7 @@
 La base de datos es PostgresSQL, por lo que, se debe de tener una base de datos local en postgress con la siguiente información.
 
 1. Nombre de la base de datos `juanchopresta`
-2. usuario postgres
+2. usuario `postgres`
 3. contraseña la de su eleccion
 
 igualmente, estos datos puede cambiarlos en el application properties del proyecto, para personalizarlo a su gusto
